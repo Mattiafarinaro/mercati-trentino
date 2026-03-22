@@ -5,513 +5,168 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Il Trentino dei Mercati</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  :root {
-    --verde: #2D5016;
-    --verde-mid: #4A7C2F;
-    --verde-light: #7BAD52;
-    --crema: #F5F0E8;
-    --crema-dark: #EAE3D2;
-    --terra: #C4602A;
-    --grigio: #6B6560;
-    --text: #1A1612;
-    --white: #FFFFFF;
-    --shadow: 0 4px 24px rgba(26,22,18,0.10);
-    --shadow-lg: 0 8px 40px rgba(26,22,18,0.18);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--crema);
-    color: var(--text);
-    min-height: 100vh;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-
-  /* HEADER */
-  .header {
-    background: var(--verde);
-    padding: 52px 24px 28px;
-    position: relative;
-    overflow: hidden;
-  }
-  .header::before {
-    content: '';
-    position: absolute;
-    top: -50px; right: -50px;
-    width: 200px; height: 200px;
-    background: var(--verde-mid);
-    border-radius: 50%;
-    opacity: 0.35;
-  }
-  .header::after {
-    content: '';
-    position: absolute;
-    bottom: -40px; left: 10px;
-    width: 140px; height: 140px;
-    background: var(--verde-light);
-    border-radius: 50%;
-    opacity: 0.18;
-  }
-  .header-label {
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--verde-light);
-    font-weight: 500;
-    margin-bottom: 8px;
-    position: relative; z-index: 1;
-  }
-  .header-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 34px;
-    color: var(--white);
-    line-height: 1.15;
-    position: relative; z-index: 1;
-  }
-  .header-title em { font-style: italic; color: #B8D98A; }
-  .header-count {
-    margin-top: 10px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.55);
-    position: relative; z-index: 1;
-  }
-  .header-count span { color: var(--verde-light); font-weight: 500; }
-
-  /* SEARCH */
-  .search-wrap {
-    padding: 14px 20px 0;
-    background: var(--verde);
-    position: relative; z-index: 1;
-  }
-  .search-box {
-    display: flex;
-    align-items: center;
-    background: rgba(255,255,255,0.13);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 14px;
-    padding: 12px 16px;
-    gap: 10px;
-  }
-  .search-box input {
-    background: none; border: none; outline: none;
-    color: white; font-family: 'DM Sans', sans-serif;
-    font-size: 15px; width: 100%;
-  }
-  .search-box input::placeholder { color: rgba(255,255,255,0.4); }
-
-  /* WAVE */
-  .wave { background: var(--verde); height: 24px; position: relative; }
-  .wave::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0; height: 24px;
-    background: var(--crema);
-    border-radius: 24px 24px 0 0;
-  }
-
-  /* LOADING */
-  .loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 60px 24px;
-    gap: 16px;
-    color: var(--grigio);
-    font-size: 14px;
-  }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--crema-dark);
-    border-top-color: var(--verde);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* FILTERS */
-  .filters-section { padding: 18px 20px 0; }
-  .filter-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--grigio);
-    font-weight: 500;
-    margin-bottom: 7px;
-  }
-  .filter-row {
-    display: flex;
-    gap: 7px;
-    overflow-x: auto;
-    padding-bottom: 10px;
-    scrollbar-width: none;
-  }
-  .filter-row::-webkit-scrollbar { display: none; }
-  .chip {
-    flex-shrink: 0;
-    padding: 7px 14px;
-    border-radius: 100px;
-    border: 1.5px solid var(--crema-dark);
-    background: var(--white);
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    color: var(--grigio);
-    cursor: pointer;
-    transition: all 0.18s;
-    white-space: nowrap;
-  }
-  .chip:hover { border-color: var(--verde-light); color: var(--verde); }
-  .chip.active { background: var(--verde); border-color: var(--verde); color: white; font-weight: 500; }
-  .chip.fiera.active { background: var(--terra); border-color: var(--terra); }
-  .chip.annuale.active { background: #7B5EA7; border-color: #7B5EA7; }
-
-  /* ACTIVE TAGS */
-  .active-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 20px 8px; min-height: 0; }
-  .active-tag {
-    display: flex; align-items: center; gap: 5px;
-    background: var(--crema-dark); border-radius: 100px;
-    padding: 4px 10px 4px 12px;
-    font-size: 12px; color: var(--verde); font-weight: 500;
-  }
-  .active-tag button {
-    background: none; border: none; cursor: pointer;
-    color: var(--grigio); font-size: 15px; line-height: 1; padding: 0;
-  }
-
-  /* RESULTS */
-  .results-header {
-    padding: 2px 20px 10px;
-    font-size: 13px; color: var(--grigio);
-  }
-  .results-header strong { color: var(--text); }
-
-  /* CARDS */
-  .list-wrap { padding: 0 20px 100px; }
-  .card {
-    background: var(--white);
-    border-radius: 20px;
-    margin-bottom: 13px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    display: flex;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    animation: fadeUp 0.3s ease both;
-  }
-  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .card-img {
-    width: 105px; flex-shrink: 0;
-    position: relative; overflow: hidden;
-    background: var(--crema-dark);
-    min-height: 120px;
-  }
-  .card-img img {
-    width: 100%; height: 100%;
-    object-fit: cover; display: block;
-  }
-  .card-img .img-emoji {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32px;
-    background: linear-gradient(135deg, var(--crema-dark), var(--crema));
-    position: absolute; inset: 0;
-  }
-  .badge {
-    position: absolute; top: 8px; left: 8px;
-    padding: 3px 8px; border-radius: 100px;
-    font-size: 9px; font-weight: 700;
-    letter-spacing: 0.5px; text-transform: uppercase; color: white;
-  }
-  .badge-s { background: var(--verde-mid); }
-  .badge-f { background: var(--terra); }
-  .badge-a { background: #7B5EA7; }
-
-  .card-body {
-    padding: 13px 13px 13px 11px;
-    flex: 1; display: flex; flex-direction: column;
-    justify-content: space-between; min-width: 0;
-  }
-  .card-comune { font-size: 11px; color: var(--verde-mid); font-weight: 500; margin-bottom: 4px; }
-  .card-nome { font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; color: var(--text); }
-  .card-periodo {
-    font-size: 11px; color: var(--grigio); line-height: 1.4;
-    overflow: hidden; display: -webkit-box;
-    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  }
-  .card-footer {
-    display: flex; align-items: center;
-    justify-content: space-between; margin-top: 9px;
-  }
-  .card-cat {
-    font-size: 10px; color: var(--grigio);
-    background: var(--crema); padding: 3px 8px; border-radius: 100px;
-  }
-
-  /* NO RESULTS */
-  .no-results { text-align: center; padding: 56px 24px; color: var(--grigio); }
-  .no-results .emoji { font-size: 44px; margin-bottom: 12px; }
-  .no-results h3 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
-  .no-results p { font-size: 14px; }
-
-  /* MODAL */
-  .overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(26,22,18,0.55); z-index: 100;
-    align-items: flex-end; justify-content: center;
-    max-width: 480px; margin: 0 auto;
-  }
-  .overlay.open { display: flex; }
-  .modal {
-    background: var(--white); border-radius: 28px 28px 0 0;
-    width: 100%; max-height: 88vh; overflow-y: auto;
-    animation: slideUp 0.28s ease;
-  }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .modal-handle {
-    width: 40px; height: 4px; background: var(--crema-dark);
-    border-radius: 100px; margin: 14px auto 0;
-  }
-  .modal-img-wrap {
-    width: 100%; height: 200px; overflow: hidden;
-    margin-top: 16px; position: relative;
-  }
-  .modal-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-  .modal-img-wrap .modal-emoji {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 64px;
-    background: linear-gradient(135deg, var(--crema-dark), var(--crema));
-  }
-  .modal-body { padding: 20px 22px 36px; }
-  .modal-tipo {
-    display: inline-block; padding: 4px 12px; border-radius: 100px;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
-    text-transform: uppercase; color: white; margin-bottom: 10px;
-  }
-  .modal-nome {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px; line-height: 1.2; color: var(--text); margin-bottom: 5px;
-  }
-  .modal-comune { font-size: 14px; color: var(--verde-mid); font-weight: 500; margin-bottom: 20px; }
-  .modal-row { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
-  .modal-icon {
-    width: 36px; height: 36px; background: var(--crema);
-    border-radius: 10px; display: flex; align-items: center;
-    justify-content: center; font-size: 16px; flex-shrink: 0;
-  }
-  .modal-row-lbl {
-    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--grigio); font-weight: 500; margin-bottom: 2px;
-  }
-  .modal-row-val { font-size: 14px; color: var(--text); line-height: 1.5; }
-  .modal-btn {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    background: var(--verde); color: white; border-radius: 14px;
-    padding: 15px; font-size: 15px; font-weight: 500;
-    text-decoration: none; margin-top: 22px;
-    transition: background 0.2s;
-  }
-  .modal-btn:hover { background: var(--verde-mid); }
-
-  /* BOTTOM NAV */
-  .bottom-nav {
-    position: fixed; bottom: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 100%; max-width: 480px;
-    background: var(--white);
-    border-top: 1px solid var(--crema-dark);
-    display: flex; padding: 10px 0 18px; z-index: 50;
-  }
-  .nav-btn {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; gap: 3px;
-    font-size: 10px; color: var(--grigio);
-    cursor: pointer; border: none; background: none;
-    font-family: 'DM Sans', sans-serif; transition: color 0.2s;
-  }
-  .nav-btn.active { color: var(--verde); }
-  .nav-btn svg { width: 22px; height: 22px; }
-
-  /* ERROR */
-  .error-box {
-    margin: 20px; padding: 16px 20px;
-    background: #FEF2F2; border: 1px solid #FECACA;
-    border-radius: 14px; font-size: 13px; color: #991B1B;
-    line-height: 1.5;
-  }
+:root{--verde:#2D5016;--verde-mid:#4A7C2F;--verde-light:#7BAD52;--crema:#F5F0E8;--crema-dark:#EAE3D2;--terra:#C4602A;--viola:#7B5EA7;--grigio:#6B6560;--text:#1A1612;--white:#fff;--shadow:0 4px 24px rgba(26,22,18,0.10);--shadow-lg:0 8px 40px rgba(26,22,18,0.18);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;}
+.header{background:var(--verde);padding:52px 24px 28px;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:var(--verde-mid);border-radius:50%;opacity:.35;}
+.header::after{content:'';position:absolute;bottom:-40px;left:10px;width:140px;height:140px;background:var(--verde-light);border-radius:50%;opacity:.18;}
+.header-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--verde-light);font-weight:500;margin-bottom:8px;position:relative;z-index:1;}
+.header-title{font-family:'Playfair Display',serif;font-size:34px;color:var(--white);line-height:1.15;position:relative;z-index:1;}
+.header-title em{font-style:italic;color:#B8D98A;}
+.header-count{margin-top:10px;font-size:13px;color:rgba(255,255,255,.55);position:relative;z-index:1;}
+.header-count span{color:var(--verde-light);font-weight:500;}
+.search-wrap{padding:14px 20px 0;background:var(--verde);position:relative;z-index:1;}
+.search-box{display:flex;align-items:center;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px 16px;gap:10px;}
+.search-box input{background:none;border:none;outline:none;color:white;font-family:'DM Sans',sans-serif;font-size:15px;width:100%;}
+.search-box input::placeholder{color:rgba(255,255,255,.4);}
+.wave{background:var(--verde);height:24px;position:relative;}
+.wave::after{content:'';position:absolute;bottom:0;left:0;right:0;height:24px;background:var(--crema);border-radius:24px 24px 0 0;}
+.view-toggle{display:flex;gap:8px;padding:16px 20px 0;margin-bottom:-4px;}
+.view-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:12px;border:1.5px solid var(--crema-dark);background:var(--white);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--grigio);cursor:pointer;transition:all .2s;}
+.view-btn.active{background:var(--verde);border-color:var(--verde);color:white;}
+.loading{display:flex;flex-direction:column;align-items:center;padding:60px 24px;gap:16px;color:var(--grigio);font-size:14px;}
+.spinner{width:36px;height:36px;border:3px solid var(--crema-dark);border-top-color:var(--verde);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.error-box{margin:20px;padding:16px 20px;background:#FEF2F2;border:1px solid #FECACA;border-radius:14px;font-size:13px;color:#991B1B;line-height:1.5;}
+.filters-section{padding:16px 20px 0;}
+.filter-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--grigio);font-weight:500;margin-bottom:7px;}
+.filter-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;}
+.filter-row::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;padding:7px 14px;border-radius:100px;border:1.5px solid var(--crema-dark);background:var(--white);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--grigio);cursor:pointer;transition:all .18s;white-space:nowrap;}
+.chip:hover{border-color:var(--verde-light);color:var(--verde);}
+.chip.active{background:var(--verde);border-color:var(--verde);color:white;font-weight:500;}
+.chip.fiera.active{background:var(--terra);border-color:var(--terra);}
+.chip.annuale.active{background:var(--viola);border-color:var(--viola);}
+.active-filters{display:flex;flex-wrap:wrap;gap:6px;padding:4px 20px 6px;}
+.active-tag{display:flex;align-items:center;gap:5px;background:var(--crema-dark);border-radius:100px;padding:4px 10px 4px 12px;font-size:12px;color:var(--verde);font-weight:500;}
+.active-tag button{background:none;border:none;cursor:pointer;color:var(--grigio);font-size:15px;line-height:1;padding:0;}
+.results-header{padding:2px 20px 10px;font-size:13px;color:var(--grigio);}
+.results-header strong{color:var(--text);}
+.list-wrap{padding:0 20px 100px;}
+.card{background:var(--white);border-radius:20px;margin-bottom:13px;overflow:hidden;box-shadow:var(--shadow);display:flex;cursor:pointer;transition:transform .2s,box-shadow .2s;animation:fadeUp .3s ease both;}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.card-img{width:105px;flex-shrink:0;position:relative;overflow:hidden;background:var(--crema-dark);min-height:120px;}
+.card-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.card-img .img-emoji{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;background:linear-gradient(135deg,var(--crema-dark),var(--crema));position:absolute;inset:0;}
+.badge{position:absolute;top:8px;left:8px;padding:3px 8px;border-radius:100px;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:white;}
+.badge-s{background:var(--verde-mid);}.badge-f{background:var(--terra);}.badge-a{background:var(--viola);}
+.card-body{padding:13px 13px 13px 11px;flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0;}
+.card-comune{font-size:11px;color:var(--verde-mid);font-weight:500;margin-bottom:4px;}
+.card-nome{font-size:14px;font-weight:500;line-height:1.3;margin-bottom:6px;color:var(--text);}
+.card-periodo{font-size:11px;color:var(--grigio);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;}
+.card-cat{font-size:10px;color:var(--grigio);background:var(--crema);padding:3px 8px;border-radius:100px;}
+.no-results{text-align:center;padding:56px 24px;color:var(--grigio);}
+.no-results .emoji{font-size:44px;margin-bottom:12px;}
+.no-results h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:8px;}
+#mapView{display:none;padding:0 20px 100px;}
+#map{height:420px;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px;}
+.map-legend{display:flex;gap:12px;flex-wrap:wrap;padding:12px 14px;background:var(--white);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--grigio);}
+.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.leaflet-popup-content-wrapper{border-radius:14px!important;box-shadow:var(--shadow-lg)!important;font-family:'DM Sans',sans-serif!important;}
+.popup-inner{padding:4px 2px;min-width:180px;}
+.popup-nome{font-size:14px;font-weight:600;color:#1A1612;margin-bottom:4px;}
+.popup-info{font-size:11px;color:#6B6560;line-height:1.5;margin-bottom:8px;}
+.popup-btn{display:block;text-align:center;background:#2D5016;color:white;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;border:none;width:100%;font-family:'DM Sans',sans-serif;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,22,18,.55);z-index:1000;align-items:flex-end;justify-content:center;max-width:480px;margin:0 auto;}
+.overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:28px 28px 0 0;width:100%;max-height:88vh;overflow-y:auto;animation:slideUp .28s ease;}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:40px;height:4px;background:var(--crema-dark);border-radius:100px;margin:14px auto 0;}
+.modal-img-wrap{width:100%;height:200px;overflow:hidden;margin-top:16px;position:relative;}
+.modal-img-wrap img{width:100%;height:100%;object-fit:cover;}
+.modal-img-wrap .modal-emoji{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,var(--crema-dark),var(--crema));}
+.modal-body{padding:20px 22px 36px;}
+.modal-tipo{display:inline-block;padding:4px 12px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:white;margin-bottom:10px;}
+.modal-nome{font-family:'Playfair Display',serif;font-size:26px;line-height:1.2;color:var(--text);margin-bottom:5px;}
+.modal-comune{font-size:14px;color:var(--verde-mid);font-weight:500;margin-bottom:20px;}
+.modal-row{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+.modal-icon{width:36px;height:36px;background:var(--crema);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.modal-row-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grigio);font-weight:500;margin-bottom:2px;}
+.modal-row-val{font-size:14px;color:var(--text);line-height:1.5;}
+.modal-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--verde);color:white;border-radius:14px;padding:15px;font-size:15px;font-weight:500;text-decoration:none;margin-top:22px;transition:background .2s;}
+.modal-btn:hover{background:var(--verde-mid);}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--white);border-top:1px solid var(--crema-dark);display:flex;padding:10px 0 18px;z-index:50;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--grigio);cursor:pointer;border:none;background:none;font-family:'DM Sans',sans-serif;transition:color .2s;}
+.nav-btn.active{color:var(--verde);}
+.nav-btn svg{width:22px;height:22px;}
 </style>
 </head>
 <body>
-
 <div class="header">
   <div class="header-label">Provincia Autonoma di Trento</div>
   <h1 class="header-title">Il Trentino<br><em>dei mercati</em></h1>
   <div class="header-count">Mostrando <span id="count">—</span> eventi</div>
 </div>
-
 <div class="search-wrap">
   <div class="search-box">
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/>
-    </svg>
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/></svg>
     <input type="text" id="searchInput" placeholder="Cerca mercato o comune…">
   </div>
 </div>
 <div class="wave"></div>
-
-<div id="appBody">
-  <div class="loading">
-    <div class="spinner"></div>
-    Caricamento dati dal database…
-  </div>
+<div class="view-toggle">
+  <button class="view-btn active" id="btnLista" onclick="switchView('lista')">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Lista
+  </button>
+  <button class="view-btn" id="btnMappa" onclick="switchView('mappa')">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Mappa
+  </button>
 </div>
-
+<div id="appBody"><div class="loading"><div class="spinner"></div>Caricamento dati…</div></div>
+<div id="mapView"></div>
 <div class="overlay" id="overlay" onclick="closeModal(event)">
-  <div class="modal" id="modal">
-    <div class="modal-handle"></div>
-    <div id="modalContent"></div>
-  </div>
+  <div class="modal"><div class="modal-handle"></div><div id="modalContent"></div></div>
 </div>
-
 <div class="bottom-nav">
   <button class="nav-btn active" id="nav-all" onclick="navFilter('')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-    Tutti
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Tutti
   </button>
   <button class="nav-btn" id="nav-s" onclick="navFilter('Mercato settimanale')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <rect x="3" y="3" width="18" height="18" rx="2"/>
-      <path d="M3 9h18M9 21V9"/>
-    </svg>
-    Settimanali
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Settim.
   </button>
   <button class="nav-btn" id="nav-f" onclick="navFilter('Fiera')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
-    Fiere
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Fiere
   </button>
   <button class="nav-btn" id="nav-a" onclick="navFilter('Mercato annuale')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <rect x="3" y="4" width="18" height="18" rx="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-    Annuali
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Annuali
   </button>
 </div>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ═══════════════════════════════════════════════
-// 👉 SOSTITUISCI QUESTO LINK CON IL TUO GOOGLE SHEETS CSV
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTwNIAT6WReVendR0ZJEr3rbXOnCnFPIszFurgaE1-RaAdMys5Vr-neKzsbBpovgwVKb3KuXh4o_DfC/pub?gid=1035933780&single=true&output=csv';
-// ═══════════════════════════════════════════════
+const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vTwNIAT6WReVendR0ZJEr3rbXOnCnFPIszFurgaE1-RaAdMys5Vr-neKzsbBpovgwVKb3KuXh4o_DfC/pub?gid=1035933780&single=true&output=csv';
+const COORDS={'Trento':[46.0748,11.1217],'Rovereto':[45.8912,11.0402],'Cavalese':[46.2893,11.4539],'Castello-Molina di Fiemme':[46.27,11.43],'Tesero':[46.258,11.498],'Predazzo':[46.3172,11.6047],'Levico Terme':[46.0119,11.3069],'Roncegno Terme':[46.06,11.38],'Borgo Valsugana':[46.053,11.459],'Caldonazzo':[46.0011,11.2514],'Castel Ivano':[46.035,11.48],'Pergine Valsugana':[46.0643,11.2355],'Male':[46.354,10.907],'Malé':[46.354,10.907],'Dimaro Folgarida':[46.332,10.87],'Vermiglio':[46.382,10.706],'Peio':[46.376,10.681],'Cles':[46.362,11.033],'Pinzolo':[46.1576,10.7631],'Lavis':[46.141,11.111],'Primiero San Martino di Castrozza':[46.176,11.808],'Lavarone':[45.926,11.255],'Moena':[46.3753,11.6597],'Avio':[45.7349,10.9418],'Riva del Garda':[45.8862,10.8408],'Arco':[45.9191,10.8812],'Ledro':[45.869,10.741],'Altopiano della Vigolana':[46.01,11.18],'Mezzocorona':[46.21,11.105],'Mezzolombardo':[46.216,11.097],'Borgo Chiese':[45.899,10.587]};
+const FOTO={'Agroalimentare':'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&q=80','Artigianato':'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=400&q=80','Natalizio':'https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=400&q=80','Antiquariato / pulci':'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&q=80','Misto':'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=80'};
+const EMOJI={'Agroalimentare':'🌿','Artigianato':'🪵','Natalizio':'🎄','Antiquariato / pulci':'🏺','Misto':'🛒'};
+let MERCATI=[],filtroTipo='',filtroMese='',filtroCategoria='',filtroSearch='',currentView='lista',leafletMap=null,mapMarkers=[];
 
-// Parole chiave Unsplash per categoria (fallback se non c'è foto)
-const UNSPLASH_KEYS = {
-  'Agroalimentare': 'farmers+market+italy',
-  'Artigianato': 'craft+market+artisan',
-  'Natalizio': 'christmas+market+alpine',
-  'Antiquariato / pulci': 'antique+market+vintage',
-  'Misto': 'italian+market+trentino',
-};
+function parseCSV(t){const rows=[];let row=[],field='',inQ=false;for(let i=0;i<t.length;i++){const c=t[i],nx=t[i+1];if(inQ){if(c==='"'&&nx==='"'){field+='"';i++;}else if(c==='"'){inQ=false;}else{field+=c;}}else{if(c==='"'){inQ=true;}else if(c===','||c===';'){row.push(field.trim());field='';}else if(c==='\n'||(c==='\r'&&nx==='\n')){row.push(field.trim());field='';if(row.some(f=>f))rows.push(row);row=[];if(c==='\r')i++;}else{field+=c;}}}if(field||row.length){row.push(field.trim());if(row.some(f=>f))rows.push(row);}return rows;}
 
-function unsplashUrl(categoria, seed) {
-  const key = UNSPLASH_KEYS[categoria] || 'market+italy';
-  return `https://source.unsplash.com/400x300/?${key}&sig=${seed}`;
-}
-
-let MERCATI = [];
-let filtroTipo = '', filtroMese = '', filtroCategoria = '', filtroSearch = '';
-
-// ── CSV parser robusto (gestisce virgolette e newline)
-function parseCSV(text) {
-  const rows = [];
-  let row = [], field = '', inQ = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i], next = text[i+1];
-    if (inQ) {
-      if (c === '"' && next === '"') { field += '"'; i++; }
-      else if (c === '"') { inQ = false; }
-      else { field += c; }
-    } else {
-      if (c === '"') { inQ = true; }
-      else if (c === ',' || c === ';') { row.push(field.trim()); field = ''; }
-      else if (c === '\n' || (c === '\r' && next === '\n')) {
-        row.push(field.trim()); field = '';
-        if (row.some(f => f)) rows.push(row);
-        row = [];
-        if (c === '\r') i++;
-      } else { field += c; }
-    }
-  }
-  if (field || row.length) { row.push(field.trim()); if (row.some(f => f)) rows.push(row); }
-  return rows;
-}
-
-async function loadData() {
-  try {
-    // Prova diretta prima, poi proxy CORS come fallback
-    let text = '';
-    try {
-      const resp = await fetch(SHEET_URL);
-      if (!resp.ok) throw new Error('direct failed');
-      text = await resp.text();
-    } catch {
-      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(SHEET_URL)}`;
-      const resp = await fetch(proxy);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const json = await resp.json();
-      text = json.contents;
-    }
-    const rows = parseCSV(text);
-    if (rows.length < 2) throw new Error('Foglio vuoto');
-    const headers = rows[0].map(h => h.toLowerCase().trim());
-    MERCATI = rows.slice(1).map((row, idx) => {
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = row[i] || '');
-      return {
-        nome: obj['nome'] || '',
-        comune: obj['comune'] || '',
-        tipo: obj['tipo evento'] || obj['tipo'] || '',
-        categoria: obj['categoria'] || '',
-        periodo: obj['periodo descrittivo'] || obj['periodo'] || '',
-        giorno: obj['giorno fisso'] || obj['giorno'] || '',
-        mese: obj['mese / stagione'] || obj['mese stagione'] || obj['mese'] || '',
-        sito: obj['sito web'] || obj['sito'] || '',
-        note: obj['note'] || '',
-        foto: obj['foto copertina'] || obj['foto'] || '',
-        attivo: (obj['attivo'] || 'true').toLowerCase() !== 'false',
-        _idx: idx,
-      };
-    }).filter(m => m.attivo && m.nome);
+async function loadData(){
+  try{
+    let text='';
+    try{const r=await fetch(SHEET_URL);if(!r.ok)throw 0;text=await r.text();}
+    catch{const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(SHEET_URL));if(!r.ok)throw new Error('HTTP '+r.status);text=(await r.json()).contents;}
+    const rows=parseCSV(text);if(rows.length<2)throw new Error('Foglio vuoto');
+    const h=rows[0].map(x=>x.toLowerCase().trim());
+    MERCATI=rows.slice(1).map((row,idx)=>{
+      const o={};h.forEach((k,i)=>o[k]=row[i]||'');
+      return{nome:o['nome']||'',comune:o['comune']||'',tipo:o['tipo evento']||o['tipo']||'',categoria:o['categoria']||'',periodo:o['periodo descrittivo']||o['periodo']||'',giorno:o['giorno fisso']||o['giorno']||'',mese:o['mese / stagione']||o['mese stagione']||o['mese']||'',sito:o['sito web']||o['sito']||'',note:o['note']||'',foto:o['foto copertina']||o['foto']||'',attivo:(o['attivo']||'true').toLowerCase()!=='false',_idx:idx};
+    }).filter(m=>m.attivo&&m.nome);
     renderUI();
-  } catch (e) {
-    document.getElementById('appBody').innerHTML = `
-      <div class="error-box">
-        ⚠️ Impossibile caricare i dati dal foglio Google.<br>
-        Controlla che il foglio sia pubblicato correttamente.<br>
-        <small style="opacity:.7">${e.message}</small>
-      </div>`;
-  }
+  }catch(e){document.getElementById('appBody').innerHTML='<div class="error-box">⚠️ Impossibile caricare i dati. Controlla che il foglio sia pubblicato correttamente.<br><small>'+e.message+'</small></div>';}
 }
 
-function renderUI() {
-  const comuni = [...new Set(MERCATI.map(m => m.comune))].sort();
-  const categorie = [...new Set(MERCATI.map(m => m.categoria))].filter(Boolean).sort();
-  const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-  const MESI_SHORT = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-
-  document.getElementById('appBody').innerHTML = `
+function renderUI(){
+  const cat=[...new Set(MERCATI.map(m=>m.categoria))].filter(Boolean).sort();
+  const MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const MS=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  document.getElementById('appBody').innerHTML=`
     <div class="filters-section">
       <div class="filter-label">Tipo</div>
       <div class="filter-row" id="tipoRow">
@@ -523,179 +178,127 @@ function renderUI() {
       <div class="filter-label">Mese</div>
       <div class="filter-row" id="meseRow">
         <button class="chip active" data-v="">Tutti</button>
-        ${MESI.map((m,i) => `<button class="chip" data-v="${m}">${MESI_SHORT[i]}</button>`).join('')}
+        ${MESI.map((m,i)=>'<button class="chip" data-v="'+m+'">'+MS[i]+'</button>').join('')}
       </div>
       <div class="filter-label">Categoria</div>
       <div class="filter-row" id="catRow">
         <button class="chip active" data-v="">Tutte</button>
-        ${categorie.map(c => `<button class="chip" data-v="${c}">${c}</button>`).join('')}
+        ${cat.map(c=>'<button class="chip" data-v="'+c+'">'+c+'</button>').join('')}
       </div>
     </div>
     <div class="active-filters" id="activeTags"></div>
     <div class="results-header"><strong id="resultN">0</strong> risultati</div>
     <div class="list-wrap" id="listWrap"></div>`;
-
-  // Bind filtri
-  ['tipoRow','meseRow','catRow'].forEach(id => {
-    document.getElementById(id).addEventListener('click', e => {
-      const chip = e.target.closest('.chip');
-      if (!chip) return;
-      document.querySelectorAll(`#${id} .chip`).forEach(c => c.classList.remove('active'));
+  ['tipoRow','meseRow','catRow'].forEach(id=>{
+    document.getElementById(id).addEventListener('click',e=>{
+      const chip=e.target.closest('.chip');if(!chip)return;
+      document.querySelectorAll('#'+id+' .chip').forEach(c=>c.classList.remove('active'));
       chip.classList.add('active');
-      if (id === 'tipoRow') filtroTipo = chip.dataset.v;
-      if (id === 'meseRow') filtroMese = chip.dataset.v;
-      if (id === 'catRow') filtroCategoria = chip.dataset.v;
+      if(id==='tipoRow')filtroTipo=chip.dataset.v;
+      if(id==='meseRow')filtroMese=chip.dataset.v;
+      if(id==='catRow')filtroCategoria=chip.dataset.v;
       render();
     });
   });
-
-  document.getElementById('searchInput').addEventListener('input', e => {
-    filtroSearch = e.target.value.trim();
-    render();
-  });
-
+  document.getElementById('searchInput').addEventListener('input',e=>{filtroSearch=e.target.value.trim();render();});
   render();
 }
 
-function matchMese(mese, filtro) {
-  if (!filtro) return true;
-  if (!mese) return false;
-  if (mese.toLowerCase().includes("tutto") || mese.toLowerCase().includes("anno")) return true;
-  if (mese === 'Estate') return ['Giugno','Luglio','Agosto'].includes(filtro);
-  if (mese === 'Primavera') return ['Marzo','Aprile','Maggio'].includes(filtro);
-  if (mese === 'Autunno') return ['Settembre','Ottobre','Novembre'].includes(filtro);
-  if (mese === 'Inverno') return ['Dicembre','Gennaio','Febbraio'].includes(filtro);
-  return mese.includes(filtro);
+function matchMese(m,f){if(!f)return true;if(!m)return false;if(m.toLowerCase().includes('tutto')||m.toLowerCase().includes('anno'))return true;if(m==='Estate')return['Giugno','Luglio','Agosto'].includes(f);if(m==='Primavera')return['Marzo','Aprile','Maggio'].includes(f);if(m==='Autunno')return['Settembre','Ottobre','Novembre'].includes(f);if(m==='Inverno')return['Dicembre','Gennaio','Febbraio'].includes(f);return m.includes(f);}
+function bClass(t){return t==='Fiera'?'badge-f':t==='Mercato settimanale'?'badge-s':'badge-a';}
+function bLabel(t){return t==='Mercato settimanale'?'Settim.':t==='Mercato annuale'?'Annuale':'Fiera';}
+function tColor(t){return t==='Fiera'?'#C4602A':t==='Mercato settimanale'?'#4A7C2F':'#7B5EA7';}
+function getFiltrati(){return MERCATI.filter(m=>{if(filtroTipo&&m.tipo!==filtroTipo)return false;if(!matchMese(m.mese,filtroMese))return false;if(filtroCategoria&&m.categoria!==filtroCategoria)return false;if(filtroSearch){const q=filtroSearch.toLowerCase();if(!m.nome.toLowerCase().includes(q)&&!m.comune.toLowerCase().includes(q))return false;}return true;});}
+
+function render(){
+  const f=getFiltrati();
+  document.getElementById('count').textContent=f.length;
+  if(document.getElementById('resultN'))document.getElementById('resultN').textContent=f.length;
+  let t='';
+  if(filtroTipo)t+='<span class="active-tag">'+filtroTipo+'<button onclick="clearF(\'tipo\')">×</button></span>';
+  if(filtroMese)t+='<span class="active-tag">'+filtroMese+'<button onclick="clearF(\'mese\')">×</button></span>';
+  if(filtroCategoria)t+='<span class="active-tag">'+filtroCategoria+'<button onclick="clearF(\'cat\')">×</button></span>';
+  if(document.getElementById('activeTags'))document.getElementById('activeTags').innerHTML=t;
+  if(currentView==='lista')renderLista(f);else renderMappa(f);
 }
 
-function badgeClass(tipo) {
-  if (tipo === 'Fiera') return 'badge-f';
-  if (tipo === 'Mercato settimanale') return 'badge-s';
-  return 'badge-a';
-}
-function badgeLabel(tipo) {
-  if (tipo === 'Mercato settimanale') return 'Settim.';
-  if (tipo === 'Mercato annuale') return 'Annuale';
-  return 'Fiera';
-}
-function tipoColor(tipo) {
-  if (tipo === 'Fiera') return '#C4602A';
-  if (tipo === 'Mercato settimanale') return '#4A7C2F';
-  return '#7B5EA7';
-}
-
-const EMOJI_MAP = {
-  'Agroalimentare': '🌿', 'Artigianato': '🪵',
-  'Natalizio': '🎄', 'Antiquariato / pulci': '🏺', 'Misto': '🛒'
-};
-
-function render() {
-  const filtrati = MERCATI.filter(m => {
-    if (filtroTipo && m.tipo !== filtroTipo) return false;
-    if (!matchMese(m.mese, filtroMese)) return false;
-    if (filtroCategoria && m.categoria !== filtroCategoria) return false;
-    if (filtroSearch) {
-      const q = filtroSearch.toLowerCase();
-      if (!m.nome.toLowerCase().includes(q) && !m.comune.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
-
-  document.getElementById('count').textContent = filtrati.length;
-  document.getElementById('resultN').textContent = filtrati.length;
-
-  // Active tags
-  let tagsHtml = '';
-  if (filtroTipo) tagsHtml += `<span class="active-tag">${filtroTipo}<button onclick="clearF('tipo')">×</button></span>`;
-  if (filtroMese) tagsHtml += `<span class="active-tag">${filtroMese}<button onclick="clearF('mese')">×</button></span>`;
-  if (filtroCategoria) tagsHtml += `<span class="active-tag">${filtroCategoria}<button onclick="clearF('cat')">×</button></span>`;
-  document.getElementById('activeTags').innerHTML = tagsHtml;
-
-  const wrap = document.getElementById('listWrap');
-  if (!filtrati.length) {
-    wrap.innerHTML = `<div class="no-results">
-      <div class="emoji">🔍</div>
-      <h3>Nessun risultato</h3>
-      <p>Prova a modificare i filtri o la ricerca.</p>
-    </div>`;
-    return;
-  }
-
-  wrap.innerHTML = filtrati.map((m, i) => {
-    const emoji = EMOJI_MAP[m.categoria] || '🛒';
-    const delay = Math.min(i * 35, 350);
-    const fotoSrc = m.foto || unsplashUrl(m.categoria, m._idx);
-    return `<div class="card" style="animation-delay:${delay}ms" onclick="openModal(${MERCATI.indexOf(m)})">
-      <div class="card-img">
-        <div class="img-emoji">${emoji}</div>
-        <img src="${fotoSrc}" alt="${m.nome}" loading="lazy"
-          onerror="this.style.display='none'"
-          onload="this.previousElementSibling.style.display='none'">
-        <span class="badge ${badgeClass(m.tipo)}">${badgeLabel(m.tipo)}</span>
-      </div>
-      <div class="card-body">
-        <div>
-          <div class="card-comune">📍 ${m.comune}</div>
-          <div class="card-nome">${m.nome}</div>
-          <div class="card-periodo">${m.periodo}</div>
-        </div>
-        <div class="card-footer">
-          <span class="card-cat">${m.categoria}</span>
-          <span style="color:var(--crema-dark);font-size:18px">›</span>
-        </div>
-      </div>
-    </div>`;
+function renderLista(f){
+  const w=document.getElementById('listWrap');
+  if(!f.length){w.innerHTML='<div class="no-results"><div class="emoji">🔍</div><h3>Nessun risultato</h3><p>Prova a modificare i filtri.</p></div>';return;}
+  w.innerHTML=f.map((m,i)=>{
+    const e=EMOJI[m.categoria]||'🛒';
+    const delay=Math.min(i*35,350);
+    const img=m.foto||(FOTO[m.categoria]||FOTO['Misto']);
+    return '<div class="card" style="animation-delay:'+delay+'ms" onclick="openModal('+MERCATI.indexOf(m)+')"><div class="card-img"><div class="img-emoji">'+e+'</div><img src="'+img+'" alt="'+m.nome+'" loading="lazy" onerror="this.style.display=\'none\'" onload="this.previousElementSibling.style.display=\'none\'"><span class="badge '+bClass(m.tipo)+'">'+bLabel(m.tipo)+'</span></div><div class="card-body"><div><div class="card-comune">📍 '+m.comune+'</div><div class="card-nome">'+m.nome+'</div><div class="card-periodo">'+m.periodo+'</div></div><div class="card-footer"><span class="card-cat">'+m.categoria+'</span><span style="color:var(--crema-dark);font-size:18px">›</span></div></div></div>';
   }).join('');
 }
 
-function clearF(t) {
-  if (t === 'tipo') { filtroTipo = ''; document.querySelectorAll('#tipoRow .chip').forEach(c => c.classList.toggle('active', c.dataset.v === '')); }
-  if (t === 'mese') { filtroMese = ''; document.querySelectorAll('#meseRow .chip').forEach(c => c.classList.toggle('active', c.dataset.v === '')); }
-  if (t === 'cat') { filtroCategoria = ''; document.querySelectorAll('#catRow .chip').forEach(c => c.classList.toggle('active', c.dataset.v === '')); }
+function renderMappa(f){
+  const v=document.getElementById('mapView');
+  v.innerHTML='<div class="map-legend"><div class="legend-item"><div class="legend-dot" style="background:#4A7C2F"></div>Settimanale</div><div class="legend-item"><div class="legend-dot" style="background:#C4602A"></div>Fiera</div><div class="legend-item"><div class="legend-dot" style="background:#7B5EA7"></div>Annuale</div></div><div id="map"></div><div id="mapCards" style="margin-top:12px"></div>';
+  if(leafletMap){leafletMap.remove();leafletMap=null;}
+  leafletMap=L.map('map').setView([46.15,11.15],9);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(leafletMap);
+  const byC={};f.forEach(m=>{if(!byC[m.comune])byC[m.comune]=[];byC[m.comune].push(m);});
+  mapMarkers=[];
+  Object.entries(byC).forEach(([comune,mercati])=>{
+    const coords=COORDS[comune];if(!coords)return;
+    const col=tColor(mercati[0].tipo);
+    const icon=L.divIcon({html:'<div style="background:'+col+';width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',iconSize:[30,30],iconAnchor:[15,30],popupAnchor:[0,-34],className:''});
+    const nomi=mercati.map(m=>'• '+m.nome).join('<br>');
+    const btn=mercati.length===1&&mercati[0].sito?'<a class="popup-btn" href="'+mercati[0].sito+'" target="_blank">Scopri di più</a>':'<button class="popup-btn" onclick="openModal('+MERCATI.indexOf(mercati[0])+')">Vedi dettagli</button>';
+    const popup='<div class="popup-inner"><div class="popup-nome">'+comune+'</div><div class="popup-info">'+mercati.length+' evento'+(mercati.length>1?'i':'')+'<br>'+nomi+'</div>'+btn+'</div>';
+    const mk=L.marker(coords,{icon}).addTo(leafletMap).bindPopup(popup);
+    mapMarkers.push({mk,coords});
+  });
+  const comuni=Object.keys(byC).filter(c=>COORDS[c]);
+  document.getElementById('mapCards').innerHTML=comuni.map(comune=>{
+    const mercati=byC[comune];
+    return '<div class="card" onclick="focusComune(\''+comune+'\')"><div class="card-img" style="min-height:80px"><div class="img-emoji" style="font-size:24px">📍</div></div><div class="card-body"><div class="card-comune" style="font-size:14px;font-weight:600;color:var(--text)">'+comune+'</div><div class="card-periodo">'+mercati.length+' evento'+(mercati.length>1?'i':'')+': '+mercati.map(m=>m.nome).join(', ')+'</div></div></div>';
+  }).join('');
+}
+
+function focusComune(comune){
+  const coords=COORDS[comune];if(!coords||!leafletMap)return;
+  leafletMap.setView(coords,13,{animate:true});
+  mapMarkers.forEach(({mk,coords:c})=>{try{if(Math.abs(c[0]-coords[0])<0.01&&Math.abs(c[1]-coords[1])<0.01)mk.openPopup();}catch(e){}});
+  document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function switchView(v){
+  currentView=v;
+  document.getElementById('btnLista').classList.toggle('active',v==='lista');
+  document.getElementById('btnMappa').classList.toggle('active',v==='mappa');
+  document.getElementById('appBody').style.display=v==='lista'?'':'none';
+  document.getElementById('mapView').style.display=v==='mappa'?'':'none';
+  if(v==='mappa')renderMappa(getFiltrati());
+}
+
+function clearF(t){
+  if(t==='tipo'){filtroTipo='';document.querySelectorAll('#tipoRow .chip').forEach(c=>c.classList.toggle('active',c.dataset.v===''));}
+  if(t==='mese'){filtroMese='';document.querySelectorAll('#meseRow .chip').forEach(c=>c.classList.toggle('active',c.dataset.v===''));}
+  if(t==='cat'){filtroCategoria='';document.querySelectorAll('#catRow .chip').forEach(c=>c.classList.toggle('active',c.dataset.v===''));}
   render();
 }
 
-function navFilter(tipo) {
-  filtroTipo = tipo;
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const map = {'': 'nav-all', 'Mercato settimanale': 'nav-s', 'Fiera': 'nav-f', 'Mercato annuale': 'nav-a'};
-  document.getElementById(map[tipo])?.classList.add('active');
-  if (document.getElementById('tipoRow')) {
-    document.querySelectorAll('#tipoRow .chip').forEach(c => c.classList.toggle('active', c.dataset.v === tipo));
-  }
-  render();
-  window.scrollTo({top: 0, behavior: 'smooth'});
+function navFilter(tipo){
+  filtroTipo=tipo;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const map={'':'nav-all','Mercato settimanale':'nav-s','Fiera':'nav-f','Mercato annuale':'nav-a'};
+  document.getElementById(map[tipo])&&document.getElementById(map[tipo]).classList.add('active');
+  if(document.getElementById('tipoRow'))document.querySelectorAll('#tipoRow .chip').forEach(c=>c.classList.toggle('active',c.dataset.v===tipo));
+  render();window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function openModal(idx) {
-  const m = MERCATI[idx];
-  const emoji = EMOJI_MAP[m.categoria] || '🛒';
-  const fotoSrc = m.foto || unsplashUrl(m.categoria, m._idx);
-  document.getElementById('modalContent').innerHTML = `
-    <div class="modal-img-wrap">
-      <div class="modal-emoji">${emoji}</div>
-      <img src="${fotoSrc}" alt="${m.nome}"
-        onerror="this.style.display='none'"
-        onload="this.previousElementSibling.style.display='none'"
-        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-    </div>
-    <div class="modal-body">
-      <span class="modal-tipo" style="background:${tipoColor(m.tipo)}">${m.tipo}</span>
-      <div class="modal-nome">${m.nome}</div>
-      <div class="modal-comune">📍 ${m.comune}</div>
-      ${m.periodo ? `<div class="modal-row"><div class="modal-icon">🗓️</div><div><div class="modal-row-lbl">Periodo</div><div class="modal-row-val">${m.periodo}</div></div></div>` : ''}
-      ${m.giorno ? `<div class="modal-row"><div class="modal-icon">📅</div><div><div class="modal-row-lbl">Giorno</div><div class="modal-row-val">${m.giorno}</div></div></div>` : ''}
-      ${m.categoria ? `<div class="modal-row"><div class="modal-icon">🏷️</div><div><div class="modal-row-lbl">Categoria</div><div class="modal-row-val">${m.categoria}</div></div></div>` : ''}
-      ${m.note ? `<div class="modal-row"><div class="modal-icon">💬</div><div><div class="modal-row-lbl">Note</div><div class="modal-row-val">${m.note}</div></div></div>` : ''}
-      ${m.sito ? `<a class="modal-btn" href="${m.sito}" target="_blank">🔗 Visita il sito ufficiale</a>` : ''}
-    </div>`;
+function openModal(idx){
+  const m=MERCATI[idx];
+  const e=EMOJI[m.categoria]||'🛒';
+  const img=m.foto||(FOTO[m.categoria]||FOTO['Misto']);
+  document.getElementById('modalContent').innerHTML='<div class="modal-img-wrap"><div class="modal-emoji">'+e+'</div><img src="'+img+'" alt="'+m.nome+'" onerror="this.style.display=\'none\'" onload="this.previousElementSibling.style.display=\'none\'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></div><div class="modal-body"><span class="modal-tipo" style="background:'+tColor(m.tipo)+'">'+m.tipo+'</span><div class="modal-nome">'+m.nome+'</div><div class="modal-comune">📍 '+m.comune+'</div>'+(m.periodo?'<div class="modal-row"><div class="modal-icon">🗓️</div><div><div class="modal-row-lbl">Periodo</div><div class="modal-row-val">'+m.periodo+'</div></div></div>':'')+(m.giorno?'<div class="modal-row"><div class="modal-icon">📅</div><div><div class="modal-row-lbl">Giorno</div><div class="modal-row-val">'+m.giorno+'</div></div></div>':'')+(m.categoria?'<div class="modal-row"><div class="modal-icon">🏷️</div><div><div class="modal-row-lbl">Categoria</div><div class="modal-row-val">'+m.categoria+'</div></div></div>':'')+(m.note?'<div class="modal-row"><div class="modal-icon">💬</div><div><div class="modal-row-lbl">Note</div><div class="modal-row-val">'+m.note+'</div></div></div>':'')+(m.sito?'<a class="modal-btn" href="'+m.sito+'" target="_blank">🔗 Visita il sito ufficiale</a>':'')+'</div>';
   document.getElementById('overlay').classList.add('open');
 }
 
-function closeModal(e) {
-  if (e.target === document.getElementById('overlay'))
-    document.getElementById('overlay').classList.remove('open');
-}
+function closeModal(e){if(e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('open');}
 
 loadData();
 </script>
