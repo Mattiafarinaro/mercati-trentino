@@ -433,9 +433,18 @@ function switchView(v){
   currentView=v;
   document.getElementById('btnLista').classList.toggle('active',v==='lista');
   document.getElementById('btnMappa').classList.toggle('active',v==='mappa');
-  document.getElementById('appBody').style.display=v==='lista'?'':'none';
-  document.getElementById('mapView').style.display=v==='mappa'?'':'none';
-  if(v==='mappa')renderMappa(getFiltrati());
+  const appBody=document.getElementById('appBody');
+  const mapView=document.getElementById('mapView');
+  if(v==='lista'){
+    appBody.style.display='';
+    mapView.style.display='none';
+  } else {
+    appBody.style.display='none';
+    mapView.style.display='block';
+    mapView.style.minHeight='500px';
+    // Piccolo delay per garantire che il browser abbia calcolato le dimensioni
+    setTimeout(()=>renderMappa(getFiltrati()), 50);
+  }
 }
 
 function clearF(t){
