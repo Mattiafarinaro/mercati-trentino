@@ -3,7 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Il Trentino dei Mercati</title>
+<title>Il Trentino dei Mercati — Fiere, mercati e sagre in Trentino</title>
+<meta name="description" content="Scopri tutte le fiere, i mercati settimanali e i mercati stagionali della Provincia Autonoma di Trento. Date, luoghi, foto e contatti dei comuni trentini.">
+<meta name="keywords" content="mercati trentino, fiere trentino, mercati settimanali trentino, sagre trentino, provincia autonoma trento, mercatini">
+<meta name="author" content="FIVA Confcommercio Trentino">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://mattiafarinaro.github.io/mercati-trentino/">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mattiafarinaro.github.io/mercati-trentino/">
+<meta property="og:title" content="Il Trentino dei Mercati — Fiere e mercati in Trentino">
+<meta property="og:description" content="Scopri tutte le fiere, i mercati settimanali e i mercati stagionali della Provincia Autonoma di Trento. Date, luoghi, foto e contatti.">
+<meta property="og:image" content="https://images.unsplash.com/photo-1531913764164-f85c52e6e654?w=1200&q=80">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="800">
+<meta property="og:locale" content="it_IT">
+<meta property="og:site_name" content="Il Trentino dei Mercati">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://mattiafarinaro.github.io/mercati-trentino/">
+<meta name="twitter:title" content="Il Trentino dei Mercati — Fiere e mercati in Trentino">
+<meta name="twitter:description" content="Scopri tutte le fiere, i mercati settimanali e stagionali della Provincia Autonoma di Trento.">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1531913764164-f85c52e6e654?w=1200&q=80">
+
+<!-- PWA / Mobile -->
+<meta name="theme-color" content="#183858">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mercati Trentino">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
@@ -20,12 +50,22 @@
 body{font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;}
 
 /* HEADER */
-.header{background:linear-gradient(160deg,var(--blu-scuro) 0%,var(--blu) 100%);padding:48px 24px 28px;position:relative;overflow:hidden;}
+.header{
+  background:linear-gradient(160deg,var(--blu-scuro) 0%,var(--blu) 100%);
+  padding:48px 24px 28px;position:relative;overflow:hidden;
+}
+.header-bg{
+  position:absolute;inset:0;
+  background-image:url('https://images.unsplash.com/photo-1531913764164-f85c52e6e654?w=1200&q=80');
+  background-size:cover;background-position:center 40%;
+  opacity:0.18;
+  z-index:0;
+}
 .header::before{content:'';position:absolute;top:-60px;right:-40px;width:220px;height:220px;background:var(--blu-mid);border-radius:50%;opacity:.3;}
 .header::after{content:'';position:absolute;bottom:-50px;left:-20px;width:180px;height:180px;background:var(--azzurro-mid);border-radius:50%;opacity:.15;}
 /* montagne decorative */
 .header-mountains{position:absolute;bottom:0;left:0;right:0;height:40px;opacity:.15;}
-.header-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--azzurro);font-weight:500;margin-bottom:6px;position:relative;z-index:1;}
+.header-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--azzurro);font-weight:500;margin-bottom:6px;position:relative;z-index:2;}
 .header-logo-title{display:flex;align-items:center;gap:14px;position:relative;z-index:1;margin-bottom:8px;}
 .header-logo{width:52px;height:52px;border-radius:12px;object-fit:contain;background:white;padding:4px;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.2);}
 .header-title-wrap{}
@@ -145,6 +185,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--text);
 <body>
 
 <div class="header">
+  <div class="header-bg"></div>
   <div class="header-label">Provincia Autonoma di Trento</div>
   <div class="header-logo-title">
     <img class="header-logo" src="https://raw.githubusercontent.com/mattiafarinaro/mercati-trentino/main/logo.png" onerror="this.style.display='none'" alt="logo">
