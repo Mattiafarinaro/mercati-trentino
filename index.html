@@ -203,10 +203,10 @@ let MERCATI=[],filtroTipo='',filtroMese='',filtroCategoria='',filtroSearch='',cu
 
 function parseCoord(s){
   if(!s)return NaN;
-  // Rimuove apostrofo iniziale (Google Sheets testo), gestisce virgola italiana
   return parseFloat(String(s).trim().replace(/^'/,'').replace(',','.'));
 }
 
+function parseCSV(t){
   const rows=[];let row=[],field='',inQ=false;
   for(let i=0;i<t.length;i++){
     const c=t[i],nx=t[i+1];
