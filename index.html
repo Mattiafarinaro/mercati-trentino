@@ -201,7 +201,12 @@ const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vTwNIAT6WReVend
 
 let MERCATI=[],filtroTipo='',filtroMese='',filtroCategoria='',filtroSearch='',currentView='lista',leafletMap=null,mapMarkers=[];
 
-function parseCSV(t){
+function parseCoord(s){
+  if(!s)return NaN;
+  // Rimuove apostrofo iniziale (Google Sheets testo), gestisce virgola italiana
+  return parseFloat(String(s).trim().replace(/^'/,'').replace(',','.'));
+}
+
   const rows=[];let row=[],field='',inQ=false;
   for(let i=0;i<t.length;i++){
     const c=t[i],nx=t[i+1];
@@ -222,7 +227,8 @@ async function loadData(){
     const rows=parseCSV(text);
     if(rows.length<2)throw new Error('Foglio vuoto');
     const h=rows[0].map(x=>x.toLowerCase().trim().replace(/\s+/g,' '));
-    MERCATI=rows.slice(1).map((row,idx)=>{
+    console.log('🗂️ Colonne foglio:', h);
+    console.log('📍 Prima riga dati:', rows[1]);    MERCATI=rows.slice(1).map((row,idx)=>{
       const o={};h.forEach((k,i)=>o[k]=row[i]||'');
       return{
         nome:o['nome']||'',
@@ -236,14 +242,17 @@ async function loadData(){
         comunita:o["comunita' di valle"]||o['comunita di valle']||o['comunita']||'',
         banchi:o['numero banchi']||'',
         foto:o['foto copertina']||o['foto']||'',
-        lat:o['latitudine']||'',
-        lng:o['longitudine']||'',
+        lat:o['latitudine']||o['lat']||'',
+        lng:o['longitudine']||o['longitudine ']||o['lng']||o['lon']||'',
         sito:o['sito web']||o['sito']||'',
         note:o['note']||'',
         attivo:(o['attivo']||'true').toLowerCase()!=='false',
         _idx:idx,
       };
     }).filter(m=>m.attivo&&m.nome);
+    const conGPS=MERCATI.filter(m=>m.lat&&m.lng);
+    console.log('✅ Totale eventi:', MERCATI.length, '| Con GPS:', conGPS.length);
+    if(conGPS.length>0)console.log('📍 Esempio coord:', conGPS[0].nome, conGPS[0].lat, conGPS[0].lng);
     renderUI();
   }catch(e){
     document.getElementById('appBody').innerHTML='<div class="error-box">⚠️ Impossibile caricare i dati.<br><small>'+e.message+'</small></div>';
@@ -365,12 +374,14 @@ function renderMappa(f){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(leafletMap);
 
   mapMarkers=[];
-  const conCoords=f.filter(m=>m.lat&&m.lng);
-  const senzaCoords=f.filter(m=>!m.lat||!m.lng);
+  const conCoords=f.filter(m=>!isNaN(parseCoord(m.lat))&&!isNaN(parseCoord(m.lng))&&parseCoord(m.lat)!==0);
+  const senzaCoords=f.filter(m=>isNaN(parseCoord(m.lat))||isNaN(parseCoord(m.lng))||parseCoord(m.lat)===0);
+  console.log('🗺️ GPS: totale='+f.length+' conGPS='+conCoords.length+' senzaGPS='+senzaCoords.length);
+  if(f.length>0)console.log('📋 Primo evento lat=['+f[0].lat+'] lng=['+f[0].lng+']');
 
   conCoords.forEach(m=>{
     try{
-      const lat=parseFloat(m.lat),lng=parseFloat(m.lng);
+      const lat=parseCoord(m.lat),lng=parseCoord(m.lng);
       if(isNaN(lat)||isNaN(lng))return;
       const col=tipoColor(m.tipo);
       const icon=L.divIcon({
