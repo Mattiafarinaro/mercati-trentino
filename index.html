@@ -362,49 +362,22 @@ function renderLista(f){
 }
 
 function renderMappa(f){
+  if(leafletMap){leafletMap.remove();leafletMap=null;}
   const v=document.getElementById('mapView');
   v.innerHTML='<div class="map-legend">'+
     '<div class="legend-item"><div class="legend-dot" style="background:#e07820"></div>Fiera</div>'+
     '<div class="legend-item"><div class="legend-dot" style="background:#3878b8"></div>Settimanale</div>'+
     '<div class="legend-item"><div class="legend-dot" style="background:#2899a8"></div>Stagionale</div>'+
-  '</div><div id="map"></div><div id="mapCards" style="margin-top:12px"></div>';
+  '</div><div id="map" style="height:440px;width:100%;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px;"></div><div id="mapCards" style="margin-top:12px"></div>';
 
-  if(leafletMap){leafletMap.remove();leafletMap=null;}
-  leafletMap=L.map('map').setView([46.07,11.12],9);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-    attribution:'© OpenStreetMap © CARTO',
-    subdomains:'abcd', maxZoom:19
-  }).addTo(leafletMap);
-
-  mapMarkers=[];
   const conCoords=f.filter(m=>!isNaN(parseCoord(m.lat))&&!isNaN(parseCoord(m.lng))&&parseCoord(m.lat)!==0);
   const senzaCoords=f.filter(m=>isNaN(parseCoord(m.lat))||isNaN(parseCoord(m.lng))||parseCoord(m.lat)===0);
-  console.log('🗺️ GPS: totale='+f.length+' conGPS='+conCoords.length+' senzaGPS='+senzaCoords.length);
-  if(f.length>0)console.log('📋 Primo evento lat=['+f[0].lat+'] lng=['+f[0].lng+']');
 
-  conCoords.forEach(m=>{
-    try{
-      const lat=parseCoord(m.lat),lng=parseCoord(m.lng);
-      if(isNaN(lat)||isNaN(lng))return;
-      const col=tipoColor(m.tipo);
-      const icon=L.divIcon({
-        html:'<div style="background:'+col+';width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',
-        iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-32],className:''
-      });
-      const fotoHtml=m.foto?'<img class="popup-foto" src="'+m.foto+'" onerror="this.style.display=\'none\'">':'';
-      const popup='<div class="popup-inner">'+fotoHtml+'<div class="popup-nome">'+m.nome+'</div><div class="popup-info">📍 '+m.comune+(m.banchi?' · 🏪 '+m.banchi+' banchi':'')+(m.data?'<br>📅 '+m.data:'')+'</div><button class="popup-btn" onclick="openModal('+MERCATI.indexOf(m)+')">Vedi dettagli</button></div>';
-      const mk=L.marker([lat,lng],{icon}).addTo(leafletMap).bindPopup(popup,{maxWidth:220});
-      mapMarkers.push({mk,lat,lng,m});
-    }catch(e){}
-  });
-
-  // Mini cards sotto mappa
+  // Mini cards subito (non dipendono dalla mappa)
   const mapC=document.getElementById('mapCards');
-  if(senzaCoords.length>0){
-    mapC.innerHTML='<div style="font-size:12px;color:var(--grigio);padding:0 0 8px">⚠️ '+senzaCoords.length+' eventi senza coordinate GPS non mostrati sulla mappa</div>';
-  }
-  mapC.innerHTML+=(conCoords.slice(0,20).map(m=>{
-    const lat=parseFloat(m.lat),lng=parseFloat(m.lng);
+  if(senzaCoords.length>0) mapC.innerHTML='<div style="font-size:12px;color:var(--grigio);padding:0 0 8px">⚠️ '+senzaCoords.length+' eventi senza GPS non mostrati</div>';
+  mapC.innerHTML+=conCoords.slice(0,20).map(m=>{
+    const lat=parseCoord(m.lat),lng=parseCoord(m.lng);
     return '<div class="card" onclick="focusPin('+lat+','+lng+')">'+
       '<div class="card-img" style="min-height:80px">'+
         (m.foto?'<img src="'+m.foto+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display=\'none\'">':'')+
@@ -414,9 +387,37 @@ function renderMappa(f){
         '<div class="card-comune">📍 '+m.comune+'</div>'+
         '<div class="card-nome" style="font-size:13px">'+m.nome+'</div>'+
         (m.banchi?'<div class="card-periodo">🏪 '+m.banchi+' banchi</div>':'')+
-      '</div>'+
-    '</div>';
-  }).join(''));
+      '</div></div>';
+  }).join('');
+
+  // Inizializza la mappa dopo che il DOM è stato renderizzato
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      const mapEl=document.getElementById('map');
+      if(!mapEl||leafletMap)return;
+      leafletMap=L.map(mapEl,{zoomControl:true,scrollWheelZoom:true}).setView([46.07,11.12],9);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+        attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19
+      }).addTo(leafletMap);
+      mapMarkers=[];
+      conCoords.forEach(m=>{
+        try{
+          const lat=parseCoord(m.lat),lng=parseCoord(m.lng);
+          if(isNaN(lat)||isNaN(lng))return;
+          const col=tipoColor(m.tipo);
+          const icon=L.divIcon({
+            html:'<div style="background:'+col+';width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',
+            iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-32],className:''
+          });
+          const fotoHtml=m.foto?'<img class="popup-foto" src="'+m.foto+'" onerror="this.style.display=\'none\'">':'';
+          const popup='<div class="popup-inner">'+fotoHtml+'<div class="popup-nome">'+m.nome+'</div><div class="popup-info">📍 '+m.comune+(m.banchi?' · 🏪 '+m.banchi+' banchi':'')+(m.data?'<br>📅 '+m.data:'')+'</div><button class="popup-btn" onclick="openModal('+MERCATI.indexOf(m)+')">Vedi dettagli</button></div>';
+          const mk=L.marker([lat,lng],{icon}).addTo(leafletMap).bindPopup(popup,{maxWidth:220});
+          mapMarkers.push({mk,lat,lng,m});
+        }catch(e){}
+      });
+      leafletMap.invalidateSize();
+    });
+  });
 }
 
 function focusPin(lat,lng){
