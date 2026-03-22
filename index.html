@@ -442,22 +442,36 @@ function renderMappa(f){
   const conCoords=f.filter(m=>!isNaN(parseCoord(m.lat))&&!isNaN(parseCoord(m.lng))&&parseCoord(m.lat)!==0);
   const senzaCoords=f.filter(m=>isNaN(parseCoord(m.lat))||isNaN(parseCoord(m.lng))||parseCoord(m.lat)===0);
 
-  // Mini cards subito (non dipendono dalla mappa)
+  // 3 card contatori per tipo
   const mapC=document.getElementById('mapCards');
-  if(senzaCoords.length>0) mapC.innerHTML='<div style="font-size:12px;color:var(--grigio);padding:0 0 8px">⚠️ '+senzaCoords.length+' eventi senza GPS non mostrati</div>';
-  mapC.innerHTML+=conCoords.slice(0,20).map(m=>{
-    const lat=parseCoord(m.lat),lng=parseCoord(m.lng);
-    return '<div class="card" onclick="focusPin('+lat+','+lng+')">'+
-      '<div class="card-img" style="min-height:80px">'+
-        (m.foto?'<img src="'+m.foto+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display=\'none\'">':'')+
-        '<div class="img-emoji" style="font-size:22px">'+emoji(m)+'</div>'+
+  const nFiere=conCoords.filter(m=>m.tipo==='Fiera').length;
+  const nSett=conCoords.filter(m=>m.tipo==='Mercato settimanale').length;
+  const nStag=conCoords.filter(m=>m.tipo==='Mercato stagionale').length;
+  mapC.innerHTML=
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">'+
+      '<div style="background:white;border-radius:16px;padding:16px 10px;text-align:center;box-shadow:var(--shadow);cursor:pointer" onclick="switchSection(\'home\');navFilter(\'Fiera\')">'+
+        '<div style="font-size:30px;font-weight:700;color:#e07820">'+nFiere+'</div>'+
+        '<div style="font-size:13px;color:var(--grigio);margin-top:4px">Fiere</div>'+
+        '<div style="width:28px;height:4px;background:#e07820;border-radius:100px;margin:8px auto 0"></div>'+
       '</div>'+
-      '<div class="card-body">'+
-        '<div class="card-comune">📍 '+m.comune+'</div>'+
-        '<div class="card-nome" style="font-size:13px">'+m.nome+'</div>'+
-        (m.banchi?'<div class="card-periodo">🏪 '+m.banchi+' banchi</div>':'')+
-      '</div></div>';
-  }).join('');
+      '<div style="background:white;border-radius:16px;padding:16px 10px;text-align:center;box-shadow:var(--shadow);cursor:pointer" onclick="switchSection(\'home\');navFilter(\'Mercato settimanale\')">'+
+        '<div style="font-size:30px;font-weight:700;color:var(--blu)">'+nSett+'</div>'+
+        '<div style="font-size:13px;color:var(--grigio);margin-top:4px">Settimanali</div>'+
+        '<div style="width:28px;height:4px;background:var(--blu);border-radius:100px;margin:8px auto 0"></div>'+
+      '</div>'+
+      '<div style="background:white;border-radius:16px;padding:16px 10px;text-align:center;box-shadow:var(--shadow);cursor:pointer" onclick="switchSection(\'home\');navFilter(\'Mercato stagionale\')">'+
+        '<div style="font-size:30px;font-weight:700;color:#2899a8">'+nStag+'</div>'+
+        '<div style="font-size:13px;color:var(--grigio);margin-top:4px">Stagionali</div>'+
+        '<div style="width:28px;height:4px;background:#2899a8;border-radius:100px;margin:8px auto 0"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:white;border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between">'+
+      '<div>'+
+        '<div style="font-size:15px;font-weight:600;color:var(--text)">'+conCoords.length+' eventi sulla mappa</div>'+
+        '<div style="font-size:13px;color:var(--grigio);margin-top:2px">Tocca un pin per i dettagli</div>'+
+      '</div>'+
+      '<button onclick="switchSection(\'home\')" style="background:var(--blu);color:white;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:500;font-family:\'DM Sans\',sans-serif;cursor:pointer">Vedi lista →</button>'+
+    '</div>';
 
   // Inizializza la mappa dopo che il DOM è stato renderizzato
   requestAnimationFrame(()=>{
