@@ -371,7 +371,10 @@ function renderMappa(f){
 
   if(leafletMap){leafletMap.remove();leafletMap=null;}
   leafletMap=L.map('map').setView([46.07,11.12],9);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(leafletMap);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap © CARTO',
+    subdomains:'abcd', maxZoom:19
+  }).addTo(leafletMap);
 
   mapMarkers=[];
   const conCoords=f.filter(m=>!isNaN(parseCoord(m.lat))&&!isNaN(parseCoord(m.lng))&&parseCoord(m.lat)!==0);
@@ -477,6 +480,3 @@ function openModal(idx){
 function closeModal(e){if(e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('open');}
 
 loadData();
-</script>
-</body>
-</html>
